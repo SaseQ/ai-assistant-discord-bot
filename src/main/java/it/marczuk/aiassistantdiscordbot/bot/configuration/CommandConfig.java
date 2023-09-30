@@ -6,6 +6,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import it.marczuk.aiassistantdiscordbot.bot.Bot;
 import it.marczuk.aiassistantdiscordbot.bot.command.AskGPT;
 import it.marczuk.aiassistantdiscordbot.bot.command.Ping;
+import it.marczuk.aiassistantdiscordbot.bot.command.Test;
 import it.marczuk.aiassistantdiscordbot.bot.exception.JdaException;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
@@ -25,13 +26,15 @@ public class CommandConfig {
 
     private final Ping ping;
     private final AskGPT askGPT;
+    private final Test test;
 
     @Autowired
-    public CommandConfig(Ping ping, AskGPT askGPT) throws LoginException {
+    public CommandConfig(Ping ping, AskGPT askGPT, Test test) throws LoginException {
         env = Bot.getInstance().getEnv();
 
         this.ping = ping;
         this.askGPT = askGPT;
+        this.test = test;
     }
 
     @PostConstruct
@@ -53,6 +56,7 @@ public class CommandConfig {
         // Registration SlashCommands
         builder.addSlashCommand(ping);
         builder.addSlashCommand(askGPT);
+        builder.addSlashCommand(test);
 
         // Registration ListenerAdapters
         jda.addEventListener();

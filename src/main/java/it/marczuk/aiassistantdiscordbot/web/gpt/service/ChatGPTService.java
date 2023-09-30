@@ -1,6 +1,6 @@
 package it.marczuk.aiassistantdiscordbot.web.gpt.service;
 
-import it.marczuk.aiassistantdiscordbot.web.gpt.configuration.ChatGPTConfiguration;
+import it.marczuk.aiassistantdiscordbot.web.gpt.configuration.ChatGPTConfig;
 import it.marczuk.aiassistantdiscordbot.web.gpt.exception.BadRequestToRestTemplateException;
 import it.marczuk.aiassistantdiscordbot.web.gpt.model.*;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class ChatGPTService {
 
     public static final String OPEN_AI_URL = "https://api.openai.com/v1/";
 
-    private final ChatGPTConfiguration chatGPTConfig;
+    private final ChatGPTConfig chatGPTConfig;
     private final RestTemplate restTemplate;
 
     public GPTResponse interactWithChatGPT(GPTMessage[] messages) {

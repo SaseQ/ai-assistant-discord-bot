@@ -7,11 +7,11 @@ import org.springframework.context.annotation.Configuration;
 import javax.security.auth.login.LoginException;
 
 @Configuration
-public class ChatGPTConfiguration {
+public class ChatGPTConfig {
 
     private final Dotenv env;
 
-    public ChatGPTConfiguration() throws LoginException {
+    public ChatGPTConfig() throws LoginException {
         env = Bot.getInstance().getEnv();
     }
 
