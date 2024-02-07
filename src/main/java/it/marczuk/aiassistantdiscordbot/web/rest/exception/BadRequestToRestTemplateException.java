@@ -1,4 +1,4 @@
-package it.marczuk.aiassistantdiscordbot.web.gpt.exception;
+package it.marczuk.aiassistantdiscordbot.web.rest.exception;
 
 public class BadRequestToRestTemplateException extends RuntimeException {
 

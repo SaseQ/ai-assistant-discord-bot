@@ -1,47 +1,39 @@
 package it.marczuk.aiassistantdiscordbot.web.gpt.service;
 
+import com.azure.ai.openai.OpenAIClient;
+import com.azure.ai.openai.OpenAIClientBuilder;
+import com.azure.ai.openai.models.*;
+import com.azure.core.credential.KeyCredential;
 import it.marczuk.aiassistantdiscordbot.web.gpt.configuration.ChatGPTConfig;
-import it.marczuk.aiassistantdiscordbot.web.gpt.exception.BadRequestToRestTemplateException;
-import it.marczuk.aiassistantdiscordbot.web.gpt.model.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTVersion;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
+
+import javax.annotation.PostConstruct;
+import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class ChatGPTService {
 
-    public static final String OPEN_AI_URL = "https://api.openai.com/v1/";
-
     private final ChatGPTConfig chatGPTConfig;
-    private final RestTemplate restTemplate;
+    private OpenAIClient client;
 
-    public GPTResponse interactWithChatGPT(GPTMessage[] messages) {
-        String apiKey = chatGPTConfig.getApiKey();
-        GPTBody gptBody = new GPTBody(GPTVersion.GPT_3_5, messages);
-        GPTResponse response = callGetMethod("chat/completions", HttpMethod.POST, getHttpEntity(gptBody, apiKey), GPTResponse.class);
-        return response;
+    public ChatGPTService(ChatGPTConfig chatGPTConfig) {
+        this.chatGPTConfig = chatGPTConfig;
     }
 
-    private <T> T callGetMethod(String url, HttpMethod method,
-                                HttpEntity<?> requestEntity, Class<T> responseType, Object... objects) {
-        try {
-            ResponseEntity<T> response = restTemplate.exchange(OPEN_AI_URL + url, method, requestEntity, responseType, objects);
-            return response.getBody();
-        } catch (HttpStatusCodeException e) {
-            throw new BadRequestToRestTemplateException(OPEN_AI_URL + url + " | " + e.getMessage(), e.getStatusCode().toString());
-        }
+    @PostConstruct
+    public void init() {
+        this.client = new OpenAIClientBuilder()
+                .credential(new KeyCredential(chatGPTConfig.getApiKey()))
+                .buildClient();
     }
 
-    private HttpEntity<Object> getHttpEntity(GPTBody gptBody, String apiKey) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type", "application/json");
-        headers.set("Authorization", "Bearer " + apiKey);
-        return new HttpEntity<>(gptBody, headers);
+    public ChatCompletions interactWithChatGPT(GPTVersion gptVersion, List<ChatMessage> messages) {
+        ChatCompletionsOptions options = new ChatCompletionsOptions(messages);
+        return client.getChatCompletions(gptVersion.getCode(), options);
+    }
+
+    public Embeddings createEmbedding(EmbeddingsOptions embeddingsOptions) {
+        return client.getEmbeddings(GPTVersion.TEXT_EMBEDDING_ADA_002.getCode(), embeddingsOptions);
     }
 }

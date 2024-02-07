@@ -1,10 +1,11 @@
 package it.marczuk.aiassistantdiscordbot.bot.command;
 
+import com.azure.ai.openai.models.ChatCompletions;
+import com.azure.ai.openai.models.ChatMessage;
+import com.azure.ai.openai.models.ChatRole;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTMessage;
-import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTResponse;
-import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTRole;
+import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTVersion;
 import it.marczuk.aiassistantdiscordbot.web.gpt.service.ChatGPTService;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -58,8 +59,8 @@ public class AskGPT extends SlashCommand {
             return;
         }
 
-        GPTMessage[] messages = {new GPTMessage(GPTRole.valueOf(role.getAsString()), content.getAsString())};
-        GPTResponse response = chatGPTService.interactWithChatGPT(messages);
-        event.reply(response.getChoices().get(0).getMessage().getContent()).queue();
+        ChatMessage chatMessage = new ChatMessage(ChatRole.fromString(role.getAsString()), content.getAsString());
+        ChatCompletions chatCompletions = chatGPTService.interactWithChatGPT(GPTVersion.GPT_4_5, List.of(chatMessage));
+        event.reply(chatCompletions.getChoices().get(0).getMessage().getContent()).queue();
     }
 }
