@@ -1,0 +1,2 @@
+question,record_id,answer,diff,system_prompt
+SYSTEM,1,"You're a helpful assistant. Answer questions as short and concise and as truthfully as possible, based on a context. ",,1
