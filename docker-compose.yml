@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  ai_assistant_discord_bot:
+    build: .
+    restart: always
+    ports:
+      - "9595:9595"
+    depends_on:
+      - qdrant
+      - nocodb
+
+  qdrant:
+    image: "qdrant/qdrant:latest"
+    ports:
+      - "6333:6333"
+    volumes:
+      - "./path/to/data:/qdrant/storage"
+
+  nocodb:
+    depends_on:
+      root_db:
+        condition: service_healthy
+    environment:
+      NC_DB: "pg://root_db:5432?u=postgres&p=password&d=root_db"
+    image: "nocodb/nocodb:latest"
+    ports:
+      - "6335:8080"
+    restart: always
+    volumes:
+      - "nc_data:/usr/app/data"
+  root_db:
+    environment:
+      POSTGRES_DB: root_db
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+    healthcheck:
+      interval: 10s
+      retries: 10
+      test: "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""
+      timeout: 2s
+    image: postgres
+    restart: always
+    volumes:
+      - "db_data:/var/lib/postgresql/data"
+volumes:
+  db_data: {}
+  nc_data: {}
+  qd_data: {}
