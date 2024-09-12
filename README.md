@@ -1,4 +1,4 @@
-![](https://media.discordapp.net/attachments/1184934424438132806/1199790581245820988/ai_assistant_discord_bot.png?ex=669f54cd&is=669e034d&hm=b425e77d3b04fd3fedb093bcd7ec1f98a903e5b12e64ab3ecc42f3ef5e739ebc&=&format=webp&quality=lossless&width=1100&height=348)
+![](https://raw.githubusercontent.com/SaseQ/ai-assistant-discord-bot/refs/heads/master/ai_assistant_discord_bot.png)
 
 #### Discord Bot that acts as your personal, executive assistnant. Not only it gives you answers, but perform actions in apps you use daily!
 
