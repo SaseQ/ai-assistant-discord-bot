@@ -7,6 +7,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import it.marczuk.aiassistantdiscordbot.web.assistant.exception.AssistantException;
 import it.marczuk.aiassistantdiscordbot.web.assistant.model.Enrich;
+import it.marczuk.aiassistantdiscordbot.web.google.service.GmailService;
+import it.marczuk.aiassistantdiscordbot.web.google.service.GoogleCalendarService;
 import it.marczuk.aiassistantdiscordbot.web.gpt.model.GPTVersion;
 import it.marczuk.aiassistantdiscordbot.web.gpt.service.ChatGPTService;
 import it.marczuk.aiassistantdiscordbot.web.nocodb.model.ResourceRequest;
@@ -25,6 +27,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -38,11 +42,21 @@ public class AssistantService {
     private final ChatGPTService chatGPTService;
     private final QdrantService qdrantService;
     private final NocoDBService nocoDBService;
+    private final GoogleCalendarService calendarService;
+    private final GmailService gmailService;
 
     public String interactWithAssistant(String query) {
         JsonObject identity = JsonParser.parseString(identifyQuery(query)).getAsJsonObject();
-        String type = identity.get("type").getAsString();
-        String tools = identity.get("tools").getAsString();
+        JsonElement typeJson = identity.get("type");
+        JsonElement toolsJson = identity.get("tools");
+        String type = "";
+        String tools = "";
+        if(!typeJson.isJsonNull()) {
+            type = identity.get("type").getAsString();
+        }
+        if(!Objects.equals(type, "query"))  {
+            tools = identity.get("tools").getAsString();
+        }
         log.info("type: " + type);
         log.info("tools: " + tools);
 
@@ -63,8 +77,35 @@ public class AssistantService {
             String context = getContext(recordIdList);
             return answer(context, query);
         }
+        if(type.equals("action") && tools.contains("calendar")) {
+            return getTaskParams(query);
+        }
+        if(type.equals("action") && tools.contains("email")) {
+            prepareAnEmail(query);
+            return "Email was send";
+        }
 
         return defaultInteraction(query);
+    }
+
+    private String getTaskParams(String query) {
+        String prompt = getPrompt("calendar");
+        ChatMessage systemMessage = new ChatMessage(ChatRole.SYSTEM, prompt);
+        ChatMessage userMessage = new ChatMessage(ChatRole.USER, query);
+        ChatCompletions chatCompletions = chatGPTService.interactWithChatGPT(GPTVersion.GPT_4, List.of(systemMessage, userMessage));
+        String content = chatCompletions.getChoices().get(0).getMessage().getContent();
+        JsonObject calendarJson = stringToJson(content);
+        return calendarService.addTask(calendarJson.get("summary").getAsString(), calendarJson.get("description").getAsString(), stringToDate(calendarJson.get("date").getAsString()));
+    }
+
+    private void prepareAnEmail(String query) {
+        String prompt = getPrompt("email");
+        ChatMessage systemMessage = new ChatMessage(ChatRole.SYSTEM, prompt);
+        ChatMessage userMessage = new ChatMessage(ChatRole.USER, query);
+        ChatCompletions chatCompletions = chatGPTService.interactWithChatGPT(GPTVersion.GPT_4, List.of(systemMessage, userMessage));
+        String content = chatCompletions.getChoices().get(0).getMessage().getContent();
+        JsonObject mailJson = stringToJson(content);
+        gmailService.sendEmail(mailJson.get("to").getAsString(), "saseq.test@gmail.com", mailJson.get("subject").getAsString(), mailJson.get("bodyText").getAsString());
     }
 
     private String defaultInteraction(String query) {
@@ -217,5 +258,20 @@ public class AssistantService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 .withZone(ZoneId.systemDefault());
         return formatter.format(Instant.now());
+    }
+
+    private Date stringToDate(String dateString) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        try {
+            return formatter.parse(dateString);
+        } catch (ParseException e) {
+            log.error("Invalid date format: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private JsonObject stringToJson(String stringJson) {
+        JsonObject jsonObject = JsonParser.parseString(stringJson).getAsJsonObject();
+        return jsonObject;
     }
 }
